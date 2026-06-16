@@ -145,7 +145,7 @@ export function SkillEditor({ initialValues, heading = 'New Skill', existingSlug
 
   // ── Publish ───────────────────────────────────────────────────────────────
   const onSubmit = handleSubmit(async (values) => {
-    if (validationResult?.status === 'failed') return
+    if (validationResult?.status !== 'passed') return
     setIsPublishing(true)
     setPublishError(null)
     try {
@@ -165,10 +165,10 @@ export function SkillEditor({ initialValues, heading = 'New Skill', existingSlug
     }
   })
 
-  // Publish is allowed when validation has run and didn't fail (passed or warn)
+  // Publish is allowed only when validation explicitly passed (AC-1 gate)
   const canPublish =
     validationResult !== null &&
-    validationResult.status !== 'failed' &&
+    validationResult.status === 'passed' &&
     !isValidating
 
   return (
