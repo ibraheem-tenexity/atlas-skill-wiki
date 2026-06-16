@@ -1,13 +1,157 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  skill_author   @map("skill.author")
+  dept_lead      @map("dept.lead")
+  gov_admin      @map("gov.admin")
+  agent_builder  @map("agent.builder")
+  reader
+}
+
+enum Visibility {
+  public
+  internal
+  restricted
+}
+
+enum GovernanceStatus {
+  Draft
+  InReview
+  Approved
+  Deprecated
+}
+
+enum ConnectionType {
+  depends_on    @map("depends-on")
+  supersedes
+  related_to    @map("related-to")
+}
+
+enum VersionStatus {
+  draft
+  published
+  archived
+}
+
+enum Surface {
+  claude_code  @map("claude-code")
+  web_agent    @map("web-agent")
+  slack_bot    @map("slack-bot")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  password     String    // bcrypt hash for NextAuth credentials
+  role         Role      @default(reader)
+  departmentId String?
+  department   Department? @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  ledDepts     Department[] @relation("DepartmentLead")
+  skills       Skill[]    @relation("SkillOwner")
+  versions     SkillVersion[]
+  deployments  Deployment[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime  @default(now())
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  leadId      String?
+  lead        User?    @relation("DepartmentLead", fields: [leadId], references: [id])
+  members     User[]   @relation("DepartmentMembers")
+  skills      Skill[]
+  createdAt   DateTime @default(now())
+}
+
+model Skill {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  description      String
+  departmentId     String
+  department       Department       @relation(fields: [departmentId], references: [id])
+  tags             String[]
+  visibility       Visibility       @default(internal)
+  currentVersion   String           @default("1.0.0")
+  governanceStatus GovernanceStatus @default(Draft)
+  ownerId          String
+  owner            User             @relation("SkillOwner", fields: [ownerId], references: [id])
+  frontmatter      Json             @default("{}")
+  body             String           @default("")
+  versions         SkillVersion[]
+  connectionsFrom  Connection[]     @relation("ConnectionFrom")
+  connectionsTo    Connection[]     @relation("ConnectionTo")
+  deployments      Deployment[]
+  auditLogs        AuditLog[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model SkillVersion {
+  id                  String        @id @default(cuid())
+  skillId             String
+  skill               Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  semver              String
+  authorId            String
+  author              User          @relation(fields: [authorId], references: [id])
+  date                DateTime      @default(now())
+  status              VersionStatus @default(draft)
+  bodySnapshot        String
+  frontmatterSnapshot Json
+  validationLog       Json          @default("[]")
+  diff                String?
+}
+
+model Connection {
+  id          String         @id @default(cuid())
+  fromSkillId String
+  fromSkill   Skill          @relation("ConnectionFrom", fields: [fromSkillId], references: [id], onDelete: Cascade)
+  toSkillId   String
+  toSkill     Skill          @relation("ConnectionTo", fields: [toSkillId], references: [id], onDelete: Cascade)
+  type        ConnectionType
+  createdAt   DateTime       @default(now())
+}
+
+model Deployment {
+  id             String   @id @default(cuid())
+  skillId        String
+  skill          Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  surface        Surface
+  versionPin     String
+  installSnippet String
+  createdById    String
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id])
+  action     String
+  targetType String
+  targetId   String
+  skillId    String?
+  skill      Skill?   @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  metadata   Json     @default("{}")
+  timestamp  DateTime @default(now())
+}
+
+model Policy {
+  id                 String   @id @default(cuid())
+  requiredFields     String[]
+  allowedDepartments String[]
+  reviewSlaDays      Int      @default(7)
+  updatedAt          DateTime @updatedAt
+  updatedById        String?
 }
