@@ -72,7 +72,20 @@ const CONNECTION_TYPE_LABELS: Record<string, string> = {
 export function SkillDetailClient({ skill }: { skill: SkillWithRelations }) {
   const { data: session } = useSession()
   const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [currentStatus, setCurrentStatus] = useState(skill.governanceStatus)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  const handleGovernanceAction = async (action: string) => {
+    const res = await fetch(`/api/skills/${skill.slug}/governance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    if (res.ok) {
+      const { governanceStatus } = await res.json()
+      setCurrentStatus(governanceStatus)
+    }
+  }
 
   // Keyboard navigation for ARIA tabs (WCAG 2.1 §4.1.2)
   const handleTabKeyDown = useCallback(
@@ -138,7 +151,7 @@ export function SkillDetailClient({ skill }: { skill: SkillWithRelations }) {
             </span>
 
             {/* Governance status badge */}
-            <StatusBadge status={skill.governanceStatus} />
+            <StatusBadge status={currentStatus} />
           </div>
         </div>
 
@@ -157,15 +170,34 @@ export function SkillDetailClient({ skill }: { skill: SkillWithRelations }) {
                 Edit
               </a>
             )}
-            {showApprove && skill.governanceStatus === 'InReview' && (
+            {showApprove && (currentStatus === 'Draft' || currentStatus === 'InReview') && (
               <button
                 type="button"
+                onClick={() => handleGovernanceAction('approve')}
                 className="inline-flex items-center gap-1.5 rounded-md bg-success px-3 py-1.5 text-body-sm font-medium text-success-foreground hover:opacity-90 transition-opacity duration-fast"
               >
                 Approve
               </button>
             )}
-            {showDeploy && skill.governanceStatus === 'Approved' && (
+            {showApprove && currentStatus === 'Approved' && (
+              <button
+                type="button"
+                onClick={() => handleGovernanceAction('request_changes')}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-raised px-3 py-1.5 text-body-sm font-medium text-foreground hover:bg-sunken transition-colors duration-fast"
+              >
+                Request Changes
+              </button>
+            )}
+            {session?.user && (session.user as any).role === 'gov_admin' && currentStatus === 'Approved' && (
+              <button
+                type="button"
+                onClick={() => handleGovernanceAction('deprecate')}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-raised px-3 py-1.5 text-body-sm font-medium text-muted-foreground hover:bg-sunken transition-colors duration-fast"
+              >
+                Deprecate
+              </button>
+            )}
+            {showDeploy && currentStatus === 'Approved' && (
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-body-sm font-medium text-primary-foreground hover:bg-brand-deep transition-colors duration-fast"
@@ -346,7 +378,7 @@ export function SkillDetailClient({ skill }: { skill: SkillWithRelations }) {
               </div>
               <div>
                 <dt className="text-caption text-muted-foreground">Status</dt>
-                <dd className="text-body-sm text-foreground">{skill.governanceStatus}</dd>
+                <dd className="text-body-sm text-foreground">{currentStatus}</dd>
               </div>
               <div>
                 <dt className="text-caption text-muted-foreground">Visibility</dt>
