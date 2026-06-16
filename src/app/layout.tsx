@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
+import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
   title: "Atlas — Skill Registry & Wiki",
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-full flex bg-background text-foreground antialiased">
+        <Providers>
         {/* Sidebar */}
         <Sidebar />
 
@@ -34,6 +36,7 @@ export default function RootLayout({
             {children}
           </main>
         </div>
+        </Providers>
       </body>
     </html>
   );

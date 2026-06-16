@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   BookOpen,
   Plus,
@@ -10,6 +11,7 @@ import {
   Network,
   Layers,
 } from "lucide-react";
+import { RoleSwitcher } from "@/components/role-switcher";
 
 const navItems = [
   { href: "/", label: "Catalog", icon: BookOpen },
@@ -19,8 +21,22 @@ const navItems = [
   { href: "/graph", label: "Graph", icon: Network },
 ];
 
+const ROLE_LABELS: Record<string, string> = {
+  skill_author: "Skill Author",
+  dept_lead: "Dept Lead",
+  gov_admin: "Gov Admin",
+  agent_builder: "Agent Builder",
+  reader: "Reader",
+};
+
+const isDev = process.env.NODE_ENV === "development";
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const role = (session?.user as any)?.role as string | undefined;
+  const roleLabel = role ? (ROLE_LABELS[role] ?? role) : null;
 
   return (
     <aside
@@ -75,8 +91,25 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-sidebar-border">
-        <p className="text-caption text-muted-foreground">Tenexity Atlas v0.1</p>
+      <div className="px-3 py-3 border-t border-sidebar-border space-y-2">
+        {/* Current user role pill */}
+        {session && roleLabel && (
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-caption text-muted-foreground truncate">
+              {session.user?.name ?? session.user?.email}
+            </span>
+            <span className="ml-auto shrink-0 text-caption font-medium px-1.5 py-0.5 rounded bg-accent text-accent-foreground">
+              {roleLabel}
+            </span>
+          </div>
+        )}
+
+        {/* Dev-only role switcher */}
+        {isDev && <RoleSwitcher />}
+
+        {!isDev && (
+          <p className="text-caption text-muted-foreground px-1">Tenexity Atlas v0.1</p>
+        )}
       </div>
     </aside>
   );
