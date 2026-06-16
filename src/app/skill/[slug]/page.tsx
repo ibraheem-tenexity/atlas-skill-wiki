@@ -1,20 +1,26 @@
-interface SkillPageProps {
-  params: { slug: string };
+import { notFound } from 'next/navigation'
+import prisma from '@/lib/db'
+import { SkillDetailClient } from '@/components/skill-detail-client'
+
+interface SkillDetailPageProps {
+  params: { slug: string }
 }
 
-export default function SkillPage({ params }: SkillPageProps) {
-  return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
-        <p className="category-label mb-2">Skill</p>
-        <h1 className="text-heading-lg font-semibold text-foreground">{params.slug}</h1>
-      </div>
+export default async function SkillDetailPage({ params }: SkillDetailPageProps) {
+  const skill = await prisma.skill.findUnique({
+    where: { slug: params.slug },
+    include: {
+      department: true,
+      owner: true,
+      versions: { include: { author: true }, orderBy: { date: 'desc' } },
+      connectionsFrom: { include: { toSkill: { include: { department: true } } } },
+      connectionsTo: { include: { fromSkill: { include: { department: true } } } },
+      deployments: { include: { createdBy: true } },
+      auditLogs: { include: { actor: true }, orderBy: { timestamp: 'desc' }, take: 20 },
+    },
+  })
 
-      <div className="rounded-lg border border-border bg-card p-6">
-        <p className="text-body-md text-muted-foreground">
-          Skill detail view coming soon.
-        </p>
-      </div>
-    </div>
-  );
+  if (!skill) notFound()
+
+  return <SkillDetailClient skill={skill} />
 }
