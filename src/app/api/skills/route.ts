@@ -8,6 +8,9 @@ function slugify(name: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Get session - for now allow unauthenticated for demo (will be gated later)
+  // In production: const session = await getServerSession(authOptions)
+
   const body = await req.json()
   const { name, description, department: departmentName, tags, visibility, body: skillBody, isDraft } = body
 
@@ -17,11 +20,13 @@ export async function POST(req: NextRequest) {
 
   const slug = slugify(name)
 
+  // Check uniqueness
   const existing = await prisma.skill.findUnique({ where: { slug } })
   if (existing && !isDraft) {
     return NextResponse.json({ error: 'A skill with this name already exists', slug: existing.slug }, { status: 409 })
   }
 
+  // Find or create department
   let dept = await prisma.department.findFirst({ where: { name: departmentName } })
   if (!dept) {
     const deptSlug = slugify(departmentName)
@@ -30,6 +35,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Find or create a system user for unauthenticated publishes (demo mode)
   let systemUser = await prisma.user.findFirst({ where: { email: 'author@atlas.dev' } })
   if (!systemUser) {
     const bcrypt = await import('bcryptjs')
@@ -45,6 +51,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Parse frontmatter
   let frontmatter: Prisma.InputJsonValue = {}
   try {
     const parsed = matter(skillBody || '')
@@ -57,6 +64,8 @@ export async function POST(req: NextRequest) {
     ? tags.split(',').map((t: string) => t.trim()).filter(Boolean)
     : Array.isArray(tags) ? tags : []
 
+  // Create or update skill
+  const governanceStatus = isDraft ? 'Draft' : 'Draft'
   const version = '1.0.0'
 
   const skill = existing
@@ -77,13 +86,14 @@ export async function POST(req: NextRequest) {
           tags: tagList,
           visibility: (visibility || 'internal') as 'public' | 'internal' | 'restricted',
           currentVersion: version,
-          governanceStatus: 'Draft',
+          governanceStatus: governanceStatus as 'Draft' | 'InReview' | 'Approved' | 'Deprecated',
           ownerId: systemUser.id,
           frontmatter,
           body: skillBody || '',
         }
       })
 
+  // Create SkillVersion
   await prisma.skillVersion.create({
     data: {
       skillId: skill.id,
@@ -96,6 +106,7 @@ export async function POST(req: NextRequest) {
     }
   })
 
+  // Write AuditLog
   await prisma.auditLog.create({
     data: {
       actorId: systemUser.id,
