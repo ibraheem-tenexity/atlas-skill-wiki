@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { ShieldCheck } from "lucide-react";
 
 export default function GovernancePage() {

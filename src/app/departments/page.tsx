@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { Building2 } from 'lucide-react'
 import prisma from '@/lib/db'
 import { DepartmentCard } from '@/components/department-card'
