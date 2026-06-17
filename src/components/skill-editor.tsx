@@ -262,7 +262,7 @@ export function SkillEditor({ initialValues, heading = 'New Skill', existingSlug
                 >
                   <option value="">Select a department…</option>
                   {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
+                    <option key={dept.id} value={dept.name}>
                       {dept.name}
                     </option>
                   ))}
