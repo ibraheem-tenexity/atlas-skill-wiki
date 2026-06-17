@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import prisma from '@/lib/db'
 import { SkillCard } from '@/components/skill-card'
 import { DepartmentHealth } from '@/components/department-health'
