@@ -1,17 +1,10 @@
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import pg from 'pg'
 import bcrypt from 'bcryptjs'
 import type { AuthOptions } from 'next-auth'
 
 function getPrisma() {
-  const rawUrl = process.env.DATABASE_URL!
-  // Strip sslmode from URL — we handle SSL via pool options
-  const connectionString = rawUrl.replace(/[?&]sslmode=[^&]*/g, '').replace(/\?$/, '')
-  const pool = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: false } })
-  const adapter = new PrismaPg(pool)
-  return new PrismaClient({ adapter } as any)
+  return new PrismaClient()
 }
 
 export const authOptions: AuthOptions = {
