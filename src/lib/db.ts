@@ -11,7 +11,7 @@ function buildPool() {
     ssl: { rejectUnauthorized: false },
     // Force IPv4 family so pg doesn't attempt IPv6-only direct hosts
     family: 4,
-  })
+  } as any)
 }
 
 function createPrismaClient() {

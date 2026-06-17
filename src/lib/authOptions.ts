@@ -14,7 +14,7 @@ function getPrisma() {
     ssl: { rejectUnauthorized: false },
     // Force IPv4 family so pg doesn't attempt IPv6-only direct hosts
     family: 4,
-  })
+  } as any)
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter } as any)
 }
