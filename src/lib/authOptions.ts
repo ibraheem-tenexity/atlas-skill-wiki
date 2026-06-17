@@ -7,7 +7,7 @@ import type { AuthOptions } from 'next-auth'
 
 function getPrisma() {
   const connectionString = process.env.DATABASE_URL!
-  const pool = new pg.Pool({ connectionString })
+  const pool = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: false } })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter } as any)
 }
