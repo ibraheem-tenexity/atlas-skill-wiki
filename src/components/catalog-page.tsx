@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Search, LayoutGrid, List, SlidersHorizontal, X } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 import { SkillCard, type SkillWithDept } from '@/components/skill-card'
 import { cn } from '@/lib/utils'
 
@@ -58,6 +59,11 @@ export function CatalogPage({ initialSkills, departments }: CatalogPageProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+  const { data: session } = useSession()
+
+  // Hide New Skill button when explicitly logged in as reader; show for unauthenticated / other roles
+  const isReader = session?.user && (session.user as any).role === 'reader'
+  const showNewSkillButton = !isReader
 
   // Derive state from URL
   const searchQuery = searchParams.get('search') ?? ''
