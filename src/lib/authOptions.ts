@@ -7,14 +7,12 @@ import type { AuthOptions } from 'next-auth'
 
 function getPrisma() {
   const rawUrl = process.env.DATABASE_URL!
-  // Strip sslmode — we handle SSL via pool options
+  // Strip sslmode from URL — we handle SSL via pool options
   const connectionString = rawUrl.replace(/[?&]sslmode=[^&]*/g, '').replace(/\?$/, '')
   const pool = new pg.Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    // Force IPv4 family so pg doesn't attempt IPv6-only direct hosts
-    family: 4,
-  } as any)
+  })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter } as any)
 }
