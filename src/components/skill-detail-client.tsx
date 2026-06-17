@@ -6,7 +6,9 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSanitize from 'rehype-sanitize'
 import { StatusBadge } from '@/components/status-badge'
+import { VersionsTab } from '@/components/versions-tab'
 import { canEdit, canApprove, canDeploy } from '@/lib/auth-client'
+import { DeployModal } from '@/components/deploy-modal'
 import type {
   Skill,
   Department,
@@ -53,6 +55,9 @@ const SURFACE_LABELS: Record<string, string> = {
   'claude-code': 'Claude Code',
   'web-agent': 'Web Agent',
   'slack-bot': 'Slack Bot',
+  claude_code: 'Claude Code',
+  web_agent: 'Web Agent',
+  slack_bot: 'Slack Bot',
 }
 
 // ---------------------------------------------------------------------------
